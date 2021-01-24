@@ -1,5 +1,13 @@
-import input.*;
-import output.*;
+import input.ConsumerInput;
+import input.DistributorInput;
+import input.Input;
+import input.MonthlyUpdateInput;
+import input.ProducerInput;
+import output.ConsumerOutput;
+import output.DistributorOutput;
+import output.EntityFactory;
+import output.OutputData;
+import output.ProducerOutput;
 import utils.EnergySystem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -29,7 +37,7 @@ public final class Main {
         List<MonthlyUpdateInput> monthlyUpdates = input.getMonthlyUpdates();
         List<ProducerInput> producers = input.getInitialData().getProducers();
 
-        /* start of the simulation */
+        /* the simulation */
         EnergySystem energySystem = EnergySystem.getInstance();
 
         energySystem.simulate(distributors, consumers, producers, monthlyUpdates, numberOfTurns);
@@ -52,6 +60,7 @@ public final class Main {
         }
 
         ObjectMapper objectMapperOutput = new ObjectMapper();
-        objectMapperOutput.writerWithDefaultPrettyPrinter().writeValue(new File(args[1]), outputData);
+        objectMapperOutput.writerWithDefaultPrettyPrinter()
+                .writeValue(new File(args[1]), outputData);
     }
 }

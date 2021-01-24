@@ -1,12 +1,11 @@
 package input;
 
 import entities.EnergyType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
-public class ProducerInput extends Observable implements EntityInput {
+public final class ProducerInput extends Observable implements EntityInput {
     private int id;
     private EnergyType energyType;
     private int maxDistributors;
@@ -53,6 +52,10 @@ public class ProducerInput extends Observable implements EntityInput {
         return energyPerDistributor;
     }
 
+    /**
+     * setting the energy updated for producer
+     * @param energyPerDistributor
+     */
     public void setEnergyPerDistributor(int energyPerDistributor) {
         this.energyPerDistributor = energyPerDistributor;
         setChanged();
@@ -71,6 +74,9 @@ public class ProducerInput extends Observable implements EntityInput {
         return hasRenewableEnergy;
     }
 
+    /**
+     * using an extra field for sorting the producers
+     */
     public void setHasRenewable() {
         if (energyType.isRenewable()) {
             this.hasRenewableEnergy = true;
@@ -96,5 +102,4 @@ public class ProducerInput extends Observable implements EntityInput {
     public void setDistributorIds(List<Integer> distributorIds) {
         this.distributorIds = distributorIds;
     }
-
 }

@@ -1,6 +1,6 @@
 package input;
 
-public class ProducerChange {
+public final class ProducerChange {
     private int id;
     private int energyPerDistributor;
 
@@ -18,13 +18,5 @@ public class ProducerChange {
 
     public void setEnergyPerDistributor(int energyPerDistributor) {
         this.energyPerDistributor = energyPerDistributor;
-    }
-
-    @Override
-    public String toString() {
-        return "ProducerChange{" +
-                "id=" + id +
-                ", energyPerDistributor=" + energyPerDistributor +
-                '}';
     }
 }

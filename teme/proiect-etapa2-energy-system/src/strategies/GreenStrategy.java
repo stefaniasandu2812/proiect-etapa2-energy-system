@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GreenStrategy implements EnergyChoiceStrategy{
+public final class GreenStrategy implements EnergyChoiceStrategy {
     @Override
     public List<ProducerInput> chooseStrategy(List<ProducerInput> producers) {
 
@@ -16,8 +16,8 @@ public class GreenStrategy implements EnergyChoiceStrategy{
             producer.setHasRenewable();
         }
 
-        return producers.stream().sorted(Comparator.comparing
-                (ProducerInput::isHasRenewableEnergy, Comparator.reverseOrder())
+        return producers.stream().sorted(Comparator.comparing(
+                ProducerInput::isHasRenewableEnergy, Comparator.reverseOrder())
                 .thenComparing(ProducerInput::getPriceKW)
                 .thenComparing(ProducerInput::getEnergyPerDistributor, Comparator.reverseOrder())
                 .thenComparing(ProducerInput::getId))

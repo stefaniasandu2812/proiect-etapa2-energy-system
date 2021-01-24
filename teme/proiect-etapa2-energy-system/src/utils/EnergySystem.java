@@ -1,13 +1,27 @@
 package utils;
 
-import input.*;
-import strategies.*;
-import java.util.*;
+import input.ConsumerInput;
+import input.DistributorInput;
+import input.MonthlyStat;
+import input.MonthlyUpdateInput;
+import input.ProducerChange;
+import input.ProducerInput;
+import strategies.EnergyChoiceStrategy;
+import strategies.EnergyChoiceStrategyType;
+import strategies.GreenStrategy;
+import strategies.PriceStrategy;
+import strategies.QuantityStrategy;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 public final class EnergySystem {
     private static EnergySystem instance;
     public static final double DEBT_CONSTANT = 1.2;
+    public static final int COST_CONSTANT = 10;
 
     private EnergySystem() {
     }
@@ -24,7 +38,7 @@ public final class EnergySystem {
     }
 
     /**
-     *
+     * computing the production cost for distributor
      * @param distributor
      */
     public void computeProductionCost(DistributorInput distributor) {
@@ -34,13 +48,13 @@ public final class EnergySystem {
             cost += producer.getEnergyPerDistributor() * producer.getPriceKW();
         }
 
-        distributor.setProductionCost((int) Math.round(Math.floor(cost / 10)));
+        distributor.setProductionCost((int) Math.round(Math.floor(cost / COST_CONSTANT)));
     }
 
     /**
      *
      * @param distributor
-     * @return
+     * @return the chosen strategy
      */
     public EnergyChoiceStrategy chooseEnergyType(DistributorInput distributor) {
         if (distributor.getProducerStrategy().equals(EnergyChoiceStrategyType.GREEN)) {
@@ -210,7 +224,8 @@ public final class EnergySystem {
             for (DistributorInput distributorChange : monthlyUpdate.getDistributorChanges()) {
                 for (DistributorInput distributor : distributors) {
                     if (distributor.getId() == distributorChange.getId()) {
-                        distributor.setInitialInfrastructureCost(distributorChange.getInfrastructureCost());
+                        distributor.setInitialInfrastructureCost(distributorChange
+                                .getInfrastructureCost());
                     }
                 }
             }
@@ -229,7 +244,7 @@ public final class EnergySystem {
     }
 
     /**
-     *
+     * updating producers
      * @param producers
      * @param monthlyUpdate
      */
@@ -247,12 +262,13 @@ public final class EnergySystem {
     }
 
     /**
-     *
+     * method for duties of consumers and distributors at the beginning of the month
      * @param distributors
      * @param consumers
      */
     public void beginningOfMonthDuties(List<DistributorInput> distributors,
                                        List<ConsumerInput> consumers) {
+        /* getting the minimum contract cost distributor */
         DistributorInput minDistributor = distributors
                 .stream().filter(distributor -> !distributor.getIsBankrupt()).collect(Collectors
                         .toList()).stream()
@@ -268,6 +284,7 @@ public final class EnergySystem {
             }
         }
 
+        /* paying costs of distributors */
         for (DistributorInput distributor : distributors) {
             if (!distributor.getIsBankrupt()) {
                 payCostsDistributor(distributor);
@@ -276,32 +293,7 @@ public final class EnergySystem {
     }
 
     /**
-     *
-     * @param distributors
-     * @param consumers
-     * @param producers
-     */
-    public void firstRound(final List<DistributorInput> distributors,
-                           final List<ConsumerInput> consumers,
-                           final List<ProducerInput> producers) {
-        EnergyChoiceStrategy strategy;
-
-        for (DistributorInput distributor : distributors) {
-
-            distributor.setToChangeProducer(false);
-
-            if (distributor.getChosenProducers().size() == 0) {
-                strategy = chooseEnergyType(distributor);
-                chooseProducers(strategy.chooseStrategy(producers), distributor);
-                computeProductionCost(distributor);
-            }
-             contractPrice(distributor);
-        }
-        beginningOfMonthDuties(distributors, consumers);
-    }
-
-    /**
-     *
+     * method to chose the producers for distributor
      * @param prod
      * @param distributor
      */
@@ -317,11 +309,39 @@ public final class EnergySystem {
                 producer.addObserver(distributor);
                 distributor.getChosenProducers().add(producer);
 
+                /* check if the amount of energy is enough for the distributor */
                 if (totalEnergy > distributor.getEnergyNeededKW()) {
                     break;
                 }
             }
         }
+    }
+
+    /**
+     * the actions for the first month
+     * @param distributors
+     * @param consumers
+     * @param producers
+     */
+    public void firstRound(final List<DistributorInput> distributors,
+                           final List<ConsumerInput> consumers,
+                           final List<ProducerInput> producers) {
+        EnergyChoiceStrategy strategy;
+
+        for (DistributorInput distributor : distributors) {
+
+            /* setting the field for changing producer false for all distributors */
+            distributor.setToChangeProducer(false);
+
+            /* choosing strategy and producers */
+            if (distributor.getChosenProducers().size() == 0) {
+                strategy = chooseEnergyType(distributor);
+                chooseProducers(strategy.chooseStrategy(producers), distributor);
+                computeProductionCost(distributor);
+            }
+             contractPrice(distributor);
+        }
+        beginningOfMonthDuties(distributors, consumers);
     }
 
     /**
@@ -340,11 +360,13 @@ public final class EnergySystem {
 
         EnergyChoiceStrategy strategy;
 
-        for (int i = 0; i < numberOfTurns + 1 ; ++i) {
+        /* start of the simulation */
+        for (int i = 0; i < numberOfTurns + 1; ++i) {
 
             if (i == 0) {
-                firstRound(distributors, consumers , producers);
+                firstRound(distributors, consumers, producers);
             } else {
+
                 /* setting updates */
                 setUpdates(consumers, monthlyUpdates.get(i - 1), distributors);
 
@@ -360,9 +382,10 @@ public final class EnergySystem {
                 /* setting updates for producers */
                 setUpdatesProducers(producers, monthlyUpdates.get(i - 1));
 
-                /* choosing producers for distributors that need to */
+                /* choosing producers for distributors that need to change */
                 for (DistributorInput distributor : distributors) {
                     if (!distributor.getIsBankrupt() && distributor.getToChangeProducer()) {
+                        /* removing the distributor from the producer's lists */
                         for (ProducerInput producer : distributor.getChosenProducers()) {
                             producer.getDistributorIds().remove((Integer) distributor.getId());
                             producer.getProdDistributors().remove(distributor);
@@ -379,7 +402,8 @@ public final class EnergySystem {
                 /* updating monthly stats for producers */
                 for (ProducerInput producer : producers) {
                     Collections.sort(producer.getDistributorIds());
-                    producer.getMonthlyStats().add(new MonthlyStat(i, producer.getDistributorIds()));
+                    producer.getMonthlyStats().add(new MonthlyStat(i,
+                            producer.getDistributorIds()));
                 }
             }
         }

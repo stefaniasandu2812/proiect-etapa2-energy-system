@@ -3,10 +3,9 @@ package output;
 import entities.EnergyType;
 import input.MonthlyStat;
 import input.ProducerInput;
-
 import java.util.List;
 
-public class ProducerOutput implements EntityOutput {
+public final class ProducerOutput implements EntityOutput {
     private int id;
     private int maxDistributors;
     private double priceKW;
